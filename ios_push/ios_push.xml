@@ -1,0 +1,10 @@
+<seelog type="sync" minlevel="info">
+	<outputs formatid="main">
+        <file path="./log/ios_push.log"/>
+        <console/>
+	</outputs>
+	<formats>
+		<format id="main" format="%Date/%Time [%LEV] %Msg%n"/>
+	</formats>
+</seelog>
+

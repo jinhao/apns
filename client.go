@@ -208,9 +208,11 @@ func readErrs(c *Conn) chan error {
 		_, err := c.Read(p)
 		if err != nil {
 			errs <- err
+			log.Println("err Read from apns", err.Error())
 			return
 		}
 
+		log.Println("data read from apns", p)
 		e := NewError(p)
 		errs <- &e
 	}()
