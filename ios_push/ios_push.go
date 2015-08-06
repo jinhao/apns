@@ -5,8 +5,10 @@ import (
 	"flag"
 	"fmt"
 	log "github.com/cihub/seelog"
+	"github.com/jinhao/apns"
 	"github.com/samuel/go-zookeeper/zk"
 	"goconfig"
+	"gopkg.in/mgo.v2"
 	"io/ioutil"
 	"net/http"
 	"os"
@@ -21,7 +23,10 @@ var zk_addr = flag.String("zkaddr", "127.0.0.1:2181,127.0.0.1:2182,127.0.0.1:218
 var zk_path = flag.String("zkpath", "/xpush/iosproxy", "iosproxy report zk path")
 var mgo_addr = flag.String("mgoaddr", "127.0.0.1:27017", "mongodb addr")
 var db_xpush = flag.String("dbxpush", "xpush", "mongodb db name")
-var collection_xpush = flag.String("collxpush", "push_history", "mongodb collection name")
+var collection_xpush = flag.String("collxpush", "certfile", "mongodb collection name")
+
+var Appid_client_map map[string]apns.Client
+var session *mgo.Session
 
 func DealRequest(w http.ResponseWriter, r *http.Request) {
 	log.Info("DealRequest")
@@ -126,10 +131,17 @@ func main() {
 	flag.Parse()
 	log.Warnf("main | server_addr:%s", *server_addr)
 	log.Warnf("main | zk_addr:%s", *zk_addr)
-	log.Warnf("main | mgo_addr:%s", *mgo_addr)
 	log.Warnf("main | zk_path:%s", *zk_path)
+	log.Warnf("main | mongo_addr:%s", *mgo_addr)
 	log.Warnf("main | db_xpush:%s", *db_xpush)
 	log.Warnf("main | collection_xpush:%s", *collection_xpush)
+
+	session, err := mgo.Dial(*mgo_addr)
+	defer session.Close()
+	if err != nil {
+		log.Warnf("mgo Dial %s faild, err", *mgo_addr, err)
+		return
+	}
 
 	zks := strings.Split(*zk_addr, ",")
 	fmt.Printf("zk_addr:%-v", zks)
@@ -149,9 +161,11 @@ func main() {
 	signal.Notify(exit, os.Interrupt)
 	go zk_unreginster(tpath, c, exit)
 
+	Appid_client_map = make(map[string]apns.Client)
+
 	//pool = poolInit()
 	http.HandleFunc("/push", DealRequest)
-	http.HandleFunc("/hello/", DealRequest)
+	http.HandleFunc("/", DealRequest)
 	err = http.ListenAndServe(*server_addr, nil)
 	if err != nil {
 		log.Errorf("main | ListenAndServer addr:%s err:%v", *server_addr, err)

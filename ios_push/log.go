@@ -7,7 +7,7 @@ import (
 
 func log_open() {
 	//logger, err := log.LoggerFromConfigAsBytes([]byte(testConfig))
-	logger, err := log.LoggerFromConfigAsFile("mgoproxy.xml")
+	logger, err := log.LoggerFromConfigAsFile("ios_push.xml")
 
 	if err != nil {
 		fmt.Printf("log_open | open err:%-v", err)
